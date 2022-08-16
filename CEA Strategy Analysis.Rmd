@@ -1,0 +1,239 @@
+---
+title: "CEA Strategy Analysis"
+date: '2022-08-10'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(janitor)
+library(gdata)
+library(gt)
+report_data <- read.table("/Users/ajordan/OneDrive - McGill University/Census CEA/Monte Carlo all strategies.xls", sep = "\t", header = T)
+View(report_data)
+View(report_data%>%select(contains("Susceptible"), distImmigrantCountries))
+#View(report_data%>%select(contains("4R"), distImmigrantCountries))
+
+```
+
+## TABLES AND GRAPHS FUNCTION
+
+```{r}
+#"Screening.strategy.and.4R" ".n.Screening.strategy.and.4R."
+data_creation <- function(express1, express2){
+  report_data2 <- report_data%>%
+    select(contains(express1), distImmigrantCountries, distAge)
+  #View(report_data2)
+  
+  colnames(report_data2) <- gsub(express2, "", colnames(report_data2))
+  
+  report_data3 <- report_data2
+  
+  # %>%
+  #   select(-Cost, -NMB, -QALYs, -TBI.screened)
+  
+  report_data3$distImmigrantCountries <- as.numeric(report_data3$distImmigrantCountries)
+  #View(report_data3)
+  
+  # Finds the mean then the average 
+  options(scipen = 100, digits = 4)
+  
+  # Needs WHO regions, incidence bands, and country names
+  
+  ids <- read_xlsx("/Users/ajordan/OneDrive - McGill University/Census CEA/Master IDs.xlsx", sheet = 1)
+  ids <- row_to_names(ids, row_number = 1)%>%
+  clean_names()
+  #View(ids)
+  
+  ids <- unique(ids%>%
+    select(country_id,
+          country_of_origin,
+          who_region,
+          inc_band_2016
+          ))
+  #
+  colnames(ids) <- c("distImmigrantCountries",
+                     "BPLP",
+                     "WHO_R",
+                     "inc_band"
+                     )
+  ids$distImmigrantCountries <- as.numeric(ids$distImmigrantCountries)
+  colnames(table1)
+  table1 <- inner_join(report_data3, ids, by = "distImmigrantCountries")
+  #View(table1)
+  
+  table2_prep <- table1%>%select(distImmigrantCountries,
+                                 distAge,
+                                 WHO_R,
+                               `Yr.0.TB.cases`:`Yr.49.TB.cases`)
+  
+  #View(table2_prep)
+  
+  table2_age_avg<- table2_prep%>%group_by(distImmigrantCountries, distAge, WHO_R)%>%summarise(across(everything(), mean))
+  
+  #View(table2_age_avg)
+  
+  table2_coo_avg <- ungroup(table2_age_avg)%>%
+    select(-distImmigrantCountries, -distAge)%>%
+    group_by(WHO_R)%>%
+    summarise(across(everything(), sum))
+  
+  cost_params <- table1%>%select(
+                  distImmigrantCountries, 
+                  distAge,
+                  WHO_R,
+                  Susceptible, 
+                  TBI.screened, 
+                  TB.cases, 
+                  Cost, 
+                  NMB, 
+                  QALYs, 
+                  Exit)
+  
+  tab_list <- list(table2_coo_avg, cost_params)
+  tab_list
+
+}
+
+```
+
+
+
+```{r}
+tab_status_quo <- data_creation("Status.quo", ".n.Status.quo.")
+tab_status_quo[1]
+tab_4r <- data_creation("Screening.strategy.and.4R", ".n.Screening.strategy.and.4R.")
+tab_3hpsat <- data_creation("Screening.strategy.and.3HP.SAT", ".n.Screening.strategy.and.3HP.SAT.")
+tab_3hpdot <- data_creation("Screening.strategy.and.3HP.DOT", ".n.Screening.strategy.and.3HP.DOT.")
+tab_3hpvot_high <- data_creation("Screening.strategy.and.3HP.VOT.high", ".n.Screening.strategy.and.3HP.VOT.high.")
+tab_3hpvot_low <- data_creation("Screening.strategy.and.3HP.VOT.low", ".n.Screening.strategy.and.3HP.VOT.low.")
+```
+
+
+
+## TABLES OUTPUT
+#TB Cases
+```{r}
+
+table_creation_tb_cases <- function(x){
+  
+  x %>%
+  gt() %>%
+  tab_header(title = "TB cases across WHO regions")
+  
+}
+
+```
+
+
+```{r}
+table_creation_tb_cases(data.frame(tab_status_quo[1]))
+table_creation_tb_cases(data.frame(tab_4r[1]))
+table_creation_tb_cases(data.frame(tab_3hpsat[1]))
+table_creation_tb_cases(data.frame(tab_3hpdot[1]))
+table_creation_tb_cases(data.frame(tab_3hpvot_high[1]))
+table_creation_tb_cases(data.frame(tab_3hpvot_low[1]))
+```
+
+# Other parameters
+# Where ICERs could be added
+```{r}
+
+table_creation_other_params <- function(x){
+  
+    param_age_avg<- x%>%
+      group_by(distImmigrantCountries, distAge, WHO_R)%>%
+      summarise(across(everything(), mean))
+  
+  #View(param_age_avg)
+  
+  param_coo_avg <- ungroup(param_age_avg)%>%
+    select(-distImmigrantCountries, -distAge)%>%
+    group_by(WHO_R)%>%
+    summarise(across(everything(), sum))
+  
+  param_coo_avg %>%
+  gt() %>%
+  tab_header(title = "Params across WHO regions")
+  
+}
+
+```
+
+
+```{r}
+table_creation_other_params(data.frame(tab_status_quo[2]))
+table_creation_other_params(data.frame(tab_4r[2]))
+table_creation_other_params(data.frame(tab_3hpsat[2]))
+table_creation_other_params(data.frame(tab_3hpdot[2]))
+table_creation_other_params(data.frame(tab_3hpvot_high[2]))
+table_creation_other_params(data.frame(tab_3hpvot_low[2]))
+```
+
+## GRAPHS
+```{r}
+graph_creation <- function(x){
+  
+  
+table2_v1 <- pivot_longer(data = x, 
+             cols = starts_with("Yr"),
+             names_to = "Year",
+             values_to = "year_tb_cases")
+
+#View(table2_v1)
+
+table2_v2 <- pivot_wider(table2_v1, 
+                         names_from = WHO_R, 
+                         values_from = year_tb_cases)
+#View(table2_v2)
+
+table2_v2$Year <- gsub(" TB cases","",table2_v2$Year)
+table2_v2$Year <- gsub("Yr ", "", table2_v2$Year)
+table2_v2$Year <- as.numeric(table2_v2$Year)
+
+# WHO region table complete
+
+table2_v2 <- table2_v2%>%arrange(Year)%>%mutate(calendar_year = seq(from = 2001, to = 2050))
+
+#View(table2_v2)
+
+table2_v3 <- pivot_longer(table2_v2, cols = c("AFR-High", 
+                                              "AFR-Low", 
+                                              "AMRO",
+                                              "EMRO",
+                                              "EURO",
+                                              "SEARO",
+                                              "WPRO"),
+                          names_to = "WHO_R",
+                          values_to = "num_cases")
+
+#table2_v3
+  
+  ggplot(table2_v3, aes(calendar_year, num_cases, fill = WHO_R))+
+  geom_bar(stat = "identity", position = "stack")+
+  scale_y_continuous(limits = c(0,800), breaks = round(seq(0,800, by = 50), 1))
+}
+```
+
+```{r}
+graph_creation(data.frame(tab_status_quo[1]))
+graph_creation(data.frame(tab_4r[1]))
+graph_creation(data.frame(tab_3hpsat[1]))
+graph_creation(data.frame(tab_3hpdot[1]))
+graph_creation(data.frame(tab_3hpvot_high[1]))
+graph_creation(data.frame(tab_3hpvot_low[1]))
+```
+
+
+
+```{r}
+
+```
+
