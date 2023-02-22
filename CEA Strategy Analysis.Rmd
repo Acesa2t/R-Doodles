@@ -8,7 +8,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## 
+# Script for analyzing data and making tables using the gt package
 
 ```{r}
 library(tidyverse)
