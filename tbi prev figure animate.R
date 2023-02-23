@@ -1,3 +1,5 @@
+#Using a simplified version of the TBI prevalence files (NOT for manuscript use) to practice using interactive data visualization tools
+
 rm(list = ls(all.names = TRUE))
 
 library(tidyverse)
@@ -65,22 +67,27 @@ filter_vec <- tbi_2001_grouped%>%
 tbi_top10 <- tbi_2001_grouped%>%filter(BPLP%in%c(filter_vec$BPLP))
 
 tbi_top10_grouped <- tbi_top10%>%group_by(BPLP,YARP)%>%summarize(NUMP = sum(NUMP))
+tbi_top10_grouped[tbi_top10_grouped=="United States of America"] <- "United States"
+tbi_top10_grouped$YARP <- as.Date(paste(tbi_top10_grouped$YARP, 6, 1, sep = "-"))
 
+  
+  
+# Each individual country of origin appears over time
 gganimation_plot <- ggplot(tbi_top10_grouped, aes(x = YARP, y = NUMP, color = BPLP))+
   geom_smooth(method = lm, formula = y ~ splines::bs(x, 10), se = FALSE)+
   labs(x = "Year of Immigration to Canada",
        y = "Permanent Residents and Foreign-Born \nCitizens Living in Canada",
        color = "Country of Origin",
        title = str_c("Number from Top 10 Most Common Countries of Origin \nLiving in Canada", " in 2001"))+
-  scale_x_continuous(breaks = round(seq(1900, 2010, by = 50),1))+
-  scale_y_continuous(limits = c(0,40000), breaks = round(seq(0, 40000, by = 5000),1))+
+  scale_y_continuous(limits = c(0,40000), breaks = round(seq(0, 40000, by = 5000),0))+
   theme_bw()+
   theme(text = element_text(size = 13, face = "bold"))+
+  theme(axis.text.x = element_text(angle = 70))+
   theme(axis.text = element_text(size = 12))+
   theme(plot.title = element_text(size=13))+
   theme(legend.position="none")+
   facet_wrap(.~BPLP)
-  
+
 
 animation2 <- gganimation_plot +
   transition_states(BPLP,
@@ -89,5 +96,29 @@ animation2 <- gganimation_plot +
   enter_appear()+
   exit_fade()
 
-anim_save(animation = animation2, "prevalence_2001.gif")
+anim_save(animation = animation2, "immigration_coo_appears_2001.gif")
+
+
+# Population appears over time
+gganimation_plot2 <- ggplot(tbi_top10_grouped, aes(x = YARP, y = NUMP, color = BPLP))+
+  geom_line()+
+  labs(x = "Year of Immigration to Canada",
+       y = "Permanent Residents and Foreign-Born \nCitizens Living in Canada",
+       color = "Country of Origin",
+       title = str_c("Number from Top 10 Most Common Countries of Origin \nLiving in Canada", " in 2001"))+
+  scale_y_continuous(limits = c(0,40000), breaks = round(seq(0, 40000, by = 5000),0))+
+  theme_bw()+
+  theme(text = element_text(size = 13, face = "bold"))+
+  theme(axis.text.x = element_text(angle = 70))+
+  theme(axis.text = element_text(size = 12))+
+  theme(plot.title = element_text(size=13))+
+  theme(legend.position="none")+
+  facet_wrap(.~BPLP)
+
+animation3 <- gganimation_plot2+
+  transition_reveal(YARP)
+
+anim_save(animation = animation3, "immigration_pop_appears_2001.gif")
+
+
 
