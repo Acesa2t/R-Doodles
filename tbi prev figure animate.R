@@ -7,9 +7,10 @@ library(plotly)
 library(gganimate)
 library(png)
 library(gifski)
+library(htmlwidgets)
 
-tbi_2001 <- readRDS("estimates_2001_v4.rds")
-tb_inc <- readRDS("incidence.rds")
+tbi_2001 <- readRDS("/Users/ajordan/Documents/GitHub/R-Doodles/estimates_2001_v4.rds")
+tb_inc <- readRDS("/Users/ajordan/Documents/GitHub/R-Doodles/incidence.rds")
 colnames(tb_inc) <- c("ISO3", "WHO_Region", "e_inc_100k")
 tb_inc <- tb_inc%>%select(-WHO_Region)
 
@@ -96,7 +97,7 @@ animation2 <- gganimation_plot +
   enter_appear()+
   exit_fade()
 
-anim_save(animation = animation2, "immigration_coo_appears_2001.gif")
+#anim_save(animation = animation2, "immigration_coo_appears_2001.gif")
 
 
 # Population appears over time
@@ -117,8 +118,21 @@ gganimation_plot2 <- ggplot(tbi_top10_grouped, aes(x = YARP, y = NUMP, color = B
 
 animation3 <- gganimation_plot2+
   transition_reveal(YARP)
+animation3
 
-anim_save(animation = animation3, "immigration_pop_appears_2001.gif")
+#anim_save(animation = animation3, "immigration_pop_appears_2001.gif")
+
+fig <- plot_ly(
+  data = tbi_top10_grouped,
+  x = ~BPLP,
+  y = ~NUMP,
+  type = "bar")%>%
+  layout(
+         xaxis = list(title = "Place of Origin"),
+         yaxis = list(title = "Number Living in Canada"))
+
+
+saveWidget(fig, "2001_population.html")
 
 
 
