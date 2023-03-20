@@ -91,11 +91,10 @@ View(tbi_top10_grouped)
 ui <- navbarPage( "Place of Origin Immigration Data",
 
     # Application title
-    tabPanel("Time of Immigration Animation",
+    tabPanel("Overview",
              sidebarLayout(
                sidebarPanel(
-                 h1("Population Change Over Time"),
-                 h4("This application allows you to explore data specific to the foreign-born population in Canada in 2001. Click on the different tabs to see where permanent residents and foreign-born Canadian citizens came from and when they immigrated")
+                 h3("This application allows you to explore data specific to the foreign-born population in Canada in 2001. Click on the different tabs to see where permanent residents and foreign-born Canadian citizens came from and when they immigrated")
                ),
                
                # Show a plot of the generated distribution
@@ -104,14 +103,17 @@ ui <- navbarPage( "Place of Origin Immigration Data",
                )
              )),
     
-    tabPanel("Total Population",
-
+    tabPanel("Number Living in Canada",
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
-        sidebarPanel(
-                     selectInput('dataset', 'Census Year',"Census 2001")
+      sidebarPanel(
+        h4("Number Living in Canada in 2001"),
+        h5("Hover the cursor over each bar to see the"),
+        h5("number of people from each place of origin"),
+        h5("during the 2001 census year"),
+               #      selectInput('dataset', 'Census Year',"Census 2001")
                     
-        ),
+      ),
 
         # Show a plot of the generated distribution
         mainPanel(
@@ -119,9 +121,10 @@ ui <- navbarPage( "Place of Origin Immigration Data",
         )
     )),
     
-    tabPanel("Time of Immigration Graphs",
+    tabPanel("Year of Immigration",
              sidebarLayout(
                sidebarPanel(
+                 h4("See how many people living in Canada had immigrated during a particular year. Click the radio buttons to select different places of birth."),
                  radioButtons("placeType",
                               "Place of Birth",
                               c("All 10" = "All", 
